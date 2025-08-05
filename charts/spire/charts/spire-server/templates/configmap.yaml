@@ -54,7 +54,7 @@ server:
   log_level: {{ .Values.logLevel | quote }}
   jwt_issuer: {{ include "spire-lib.jwt-issuer" . | quote }}
   audit_log_enabled: {{ .Values.auditLogEnabled }}
-
+  initial_entries_file: /run/spire/config/initialEntries.json
   ca_key_type: {{ .Values.caKeyType | quote }}
   ca_ttl: {{ .Values.caTTL | quote }}
 
@@ -520,4 +520,6 @@ metadata:
 data:
   server.conf: |
     {{- include "spire-lib.reformat-and-yaml2json" (dict "config" (include "spire-server.yaml-config" .) "root" .) | nindent 4 }}
+  initialEntries.json: |
+    {{- .Values.initialEntries | toPrettyJson | nindent 4 }}
 {{- end }}

@@ -152,7 +152,8 @@ persistence:
   accessMode: ReadWriteOnce
   storageClass: null
   hostPath: ""
-
+initialEntries:
+  entries: []
 dataStore:
   sql:
     ## @param dataStore.sql.databaseType Other supported databases are ["postgres", "mysql", "aws_postgresql", "aws_mysql"]. Note: aws type databases are still experimental
