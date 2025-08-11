@@ -52,6 +52,7 @@ server:
   trust_domain: {{ include "spire-lib.trust-domain" . | quote }}
   data_dir: "/run/spire/data"
   log_level: {{ .Values.logLevel | quote }}
+  lock_entries_after_initial_registration: {{ .Values.lockEntriesAfterInitialRegistration }}
   jwt_issuer: {{ include "spire-lib.jwt-issuer" . | quote }}
   audit_log_enabled: {{ .Values.auditLogEnabled }}
   initial_entries_file: /run/spire/config/initialEntries.json

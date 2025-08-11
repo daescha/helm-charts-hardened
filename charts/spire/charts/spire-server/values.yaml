@@ -227,6 +227,7 @@ dataStore:
 adminIDs: []
 ## @param auditLogEnabled If true, enables audit logging
 auditLogEnabled: false
+lockEntriesAfterInitialRegistration: false
 ## @param logLevel The log level, valid values are "debug", "info", "warn", and "error"
 logLevel: info
 ## @param jwtIssuer The JWT issuer domain. Defaults to oidc-discovery.$trustDomain if unset
