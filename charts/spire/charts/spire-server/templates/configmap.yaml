@@ -52,9 +52,14 @@ server:
   trust_domain: {{ include "spire-lib.trust-domain" . | quote }}
   data_dir: "/run/spire/data"
   log_level: {{ .Values.logLevel | quote }}
+  {{ if .Values.lockEntriesAfterInitialRegistration }}
+  lock_entries_after_initial_registration: {{ .Values.lockEntriesAfterInitialRegistration }}
+  {{ end }}
   jwt_issuer: {{ include "spire-lib.jwt-issuer" . | quote }}
   audit_log_enabled: {{ .Values.auditLogEnabled }}
+  {{- if and .Values.initialEntries.entries (not (empty .Values.initialEntries.entries)) }}
   initial_entries_file: /run/spire/config/initialEntries.json
+  {{- end }}
   ca_key_type: {{ .Values.caKeyType | quote }}
   ca_ttl: {{ .Values.caTTL | quote }}
 
@@ -520,6 +525,8 @@ metadata:
 data:
   server.conf: |
     {{- include "spire-lib.reformat-and-yaml2json" (dict "config" (include "spire-server.yaml-config" .) "root" .) | nindent 4 }}
+  {{- if and .Values.initialEntries.entries (not (empty .Values.initialEntries.entries)) }}
   initialEntries.json: |
     {{- .Values.initialEntries | toPrettyJson | nindent 4 }}
+  {{- end }}
 {{- end }}
