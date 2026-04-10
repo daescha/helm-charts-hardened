@@ -239,7 +239,7 @@ spec:
             runAsUser: 0
             runAsGroup: 0
         {{- end }}
-        {{- if gt (int (dig "fsGroup" 0 $podSecurityContext)) 0 }}
+        {{- if ne (int (dig "fsGroup" 0 $podSecurityContext)) (int .Values.fsGroupFix.imageGroup) }}
         - name: fsgroupfix
           image: {{ template "spire-lib.image" (dict "image" .Values.fsGroupFix.image "global" .Values.global) }}
           imagePullPolicy: {{ .Values.fsGroupFix.image.pullPolicy | quote }}

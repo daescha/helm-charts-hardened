@@ -160,6 +160,8 @@ fsGroupFix:
     repository: chainguard/bash
     pullPolicy: IfNotPresent
     tag: latest@sha256:ef209fd7d231ead12bf24287db24991bdd979669f4df2e037698f94545816d3e
+  ## @param fsGroupFix.imageGroup The gid of the user which owns the socket path in the spire-agent image.
+  imageGroup: 0
 
 keyManager:
   memory:
