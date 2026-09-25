@@ -62,11 +62,15 @@ spec:
       initContainers:
       {{- if or (dig "openshift" false .Values.global) (dig "selinux" false .Values.global) .Values.selinux.enabled }}
         - name: set-context
-          command:
-            - chcon
-            - '-Rvt'
-            - {{ .Values.selinux.context }}
-            - spire-agent-socket/
+          command: ["sh", "-ec"]
+          # Images without coreutils relabel through the xattr, keeping user, role and MCS level.
+          args:
+            - |
+              command -v chcon >/dev/null && exec chcon -Rvt {{ .Values.selinux.context | quote }} /spire-agent-socket
+              find /spire-agent-socket | while read -r f; do
+                c=$(getfattr --absolute-names --only-values -n security.selinux "$f")
+                setfattr -n security.selinux -v "$(echo "$c" | sed 's/^\([^:]*:[^:]*:\)[^:]*/\1{{ .Values.selinux.context }}/')" "$f"
+              done
           image: {{ template "spire-lib.image" (dict "appVersion" $.Chart.AppVersion "image" .Values.selinux.image "global" .Values.global) }}
           imagePullPolicy: {{ .Values.selinux.image.pullPolicy }}
           securityContext:

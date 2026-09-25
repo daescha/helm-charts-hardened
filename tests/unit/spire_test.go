@@ -232,6 +232,21 @@ spire-agent:
 		})
 	})
 
+	Describe("spiffe-csi-driver.selinux", func() {
+		It("relabels through setfattr when the image lacks chcon", func() {
+			objs, err := ValueStringRender(chart, `
+spiffe-csi-driver:
+  selinux:
+    enabled: true
+`)
+			Expect(err).Should(Succeed())
+			ds := objs["spire/charts/spiffe-csi-driver/templates/daemonset.yaml"]
+			Expect(ds).Should(ContainSubstring(`command: ["sh", "-ec"]`))
+			Expect(ds).Should(ContainSubstring(`exec chcon -Rvt "container_file_t" /spire-agent-socket`))
+			Expect(ds).Should(ContainSubstring(`\1container_file_t/`))
+		})
+	})
+
 	Describe("spire-agent.customPlugin.tpm", func() {
 		It("plugin set ok", func() {
 			objs, err := ValueStringRender(chart, `
