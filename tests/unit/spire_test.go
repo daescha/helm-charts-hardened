@@ -207,6 +207,31 @@ spire-server:
 			Expect(notes).Should(ContainSubstring("ca_cert_path"))
 		})
 	})
+	Describe("spire-agent.initContainers.posixShell", func() {
+		It("runs every script init container under sh without openssl", func() {
+			objs, err := ValueStringRender(chart, `
+spire-agent:
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  socketAlternate:
+    names: [api.sock]
+  workloadAttestors:
+    k8s:
+      verification:
+        type: auto
+`)
+			Expect(err).Should(Succeed())
+			ds := objs["spire/charts/spire-agent/templates/daemonset.yaml"]
+			for _, name := range []string{"gather-host-cert", "ensure-alternate-names", "fsgroupfix"} {
+				Expect(ds).Should(ContainSubstring("- name: " + name))
+			}
+			Expect(ds).ShouldNot(ContainSubstring(`"bash"`))
+			Expect(ds).ShouldNot(ContainSubstring("openssl"))
+			Expect(strings.Count(ds, `command: ["sh", `)).Should(Equal(3))
+		})
+	})
+
 	Describe("spire-agent.customPlugin.tpm", func() {
 		It("plugin set ok", func() {
 			objs, err := ValueStringRender(chart, `

@@ -153,24 +153,26 @@ spec:
           imagePullPolicy: {{ .Values.tools.busybox.image.pullPolicy }}
         {{- end }}
         {{- if or (eq .Values.workloadAttestors.k8s.verification.type "hostCert") (eq .Values.workloadAttestors.k8s.verification.type "auto") }}
+        {{- $firstCert := "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/{p;/-----END CERTIFICATE-----/q}'" }}
         - name: gather-host-cert
           securityContext:
             {{- $mainSecurityContext | toYaml | nindent 12 }}
           image: {{ template "spire-lib.image" (dict "image" .Values.hostCert.image "global" .Values.global) }}
           imagePullPolicy: {{ .Values.hostCert.image.pullPolicy | quote }}
-          command: ["bash", "-xc"]
+          command: ["sh", "-xc"]
           args:
             - |
               {{- if ne .Values.workloadAttestors.k8s.verification.hostCert.fileName "" }}
-              openssl x509 -in {{ printf "%s/%s" .Values.workloadAttestors.k8s.verification.hostCert.basePath .Values.workloadAttestors.k8s.verification.hostCert.fileName | quote }} -out /hostCert/kubelet.crt
+              {{ $firstCert }} {{ printf "%s/%s" .Values.workloadAttestors.k8s.verification.hostCert.basePath .Values.workloadAttestors.k8s.verification.hostCert.fileName | quote }} > /hostCert/kubelet.crt
+              [ -s /hostCert/kubelet.crt ] || { echo Could not find certificate.; exit 1; }
               {{- else }}
               if [ -f "{{ .Values.workloadAttestors.k8s.verification.hostCert.basePath }}/kubelet-server-current.pem" ]; then
-                openssl x509 -in {{ printf "%s/kubelet-server-current.pem" .Values.workloadAttestors.k8s.verification.hostCert.basePath | quote }} -out /hostCert/kubelet.crt
+                {{ $firstCert }} {{ printf "%s/kubelet-server-current.pem" .Values.workloadAttestors.k8s.verification.hostCert.basePath | quote }} > /hostCert/kubelet.crt
               fi
-              if [ ! -f /hostCert/kubelet.crt ] && [ -f "{{ .Values.workloadAttestors.k8s.verification.hostCert.basePath }}/kubelet.crt" ]; then
-                openssl x509 -in {{ printf "%s/kubelet.crt" .Values.workloadAttestors.k8s.verification.hostCert.basePath | quote }} -out /hostCert/kubelet.crt
+              if [ ! -s /hostCert/kubelet.crt ] && [ -f "{{ .Values.workloadAttestors.k8s.verification.hostCert.basePath }}/kubelet.crt" ]; then
+                {{ $firstCert }} {{ printf "%s/kubelet.crt" .Values.workloadAttestors.k8s.verification.hostCert.basePath | quote }} > /hostCert/kubelet.crt
               fi
-              if [ ! -f /hostCert/kubelet.crt ]; then
+              if [ ! -s /hostCert/kubelet.crt ]; then
                 {{- if eq .Values.workloadAttestors.k8s.verification.type "auto" }}
                 {{- if $cbh }}
                 URL="https://$KUBELET_ADDR:10250/spec/"
@@ -186,7 +188,7 @@ spec:
                 curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt "$URL"
                 if [ $? -eq 0 ]; then
                   echo Mode detected as apiServerCA.
-                  ln -s /var/run/secrets/kubernetes.io/serviceaccount/ca.crt /hostCert/kubelet.crt
+                  ln -sf /var/run/secrets/kubernetes.io/serviceaccount/ca.crt /hostCert/kubelet.crt
                   exit 0
                 fi
                 {{- end }}
@@ -270,7 +272,7 @@ spec:
         - name: ensure-alternate-names
           image: {{ template "spire-lib.image" (dict "image" .Values.socketAlternate.image "global" .Values.global) }}
           imagePullPolicy: {{ .Values.socketAlternate.image.pullPolicy | quote }}
-          command: ["bash", "-xc"]
+          command: ["sh", "-xc"]
           {{- /* 1. Look for symlinks pointing at the wrong place and remove them. 2. Make symlinks that don't exist. 3. If new socket is pointing at an existing symlink, remove old symlink. */}}
           args:
             - |
@@ -295,7 +297,7 @@ spec:
         - name: fsgroupfix
           image: {{ template "spire-lib.image" (dict "image" .Values.fsGroupFix.image "global" .Values.global) }}
           imagePullPolicy: {{ .Values.fsGroupFix.image.pullPolicy | quote }}
-          command: ["bash", "-c"]
+          command: ["sh", "-c"]
           args:
             - |
               chown -R {{ printf "%v:%v" $podSecurityContext.runAsUser $podSecurityContext.fsGroup | quote }} {{ $socketPath | dir }} /tmp/spire-agent/private
