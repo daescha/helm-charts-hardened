@@ -477,6 +477,29 @@ keyManager:
     accessKeyID: ""
     ## @param keyManager.awsKMS.secretAccessKey [nullable] Secret access key for the AWS account.
     secretAccessKey: ""
+  azureKeyVault:
+    ## @param keyManager.azureKeyVault.enabled Flag to enable the Azure Key Vault key manager
+    enabled: false
+    ## @param keyManager.azureKeyVault.keyVaultURI URI of the Key Vault that holds the keys
+    keyVaultURI: ""
+    keyIdentifierFile:
+      ## @param keyManager.azureKeyVault.keyIdentifierFile.enabled Store the key identifier in a file in persistent storage
+      enabled: false
+    keyIdentifierValue:
+      ## @param keyManager.azureKeyVault.keyIdentifierValue.enabled Use a static key identifier value
+      enabled: false
+      ## @param keyManager.azureKeyVault.keyIdentifierValue.identifier Static identifier for the SPIRE server instance
+      identifier: ""
+    ## @param keyManager.azureKeyVault.tenantID Tenant ID. Workload Identity and Managed Identity must fetch credentials for this tenant.
+    tenantID: ""
+    ## @param keyManager.azureKeyVault.subscriptionID Subscription ID for static app credentials
+    subscriptionID: ""
+    ## @param keyManager.azureKeyVault.appID Application ID for static app credentials. Without app credentials, the plugin uses DefaultAzureCredential.
+    appID: ""
+    ## @param keyManager.azureKeyVault.appSecret [nullable] Application secret, stored in a Secret
+    appSecret: ""
+    ## @param keyManager.azureKeyVault.existingSecret [nullable] Name of a Secret with an `AZURE_KEY_VAULT_APP_SECRET` key
+    existingSecret: ""
 
 upstreamAuthority:
   disk:
