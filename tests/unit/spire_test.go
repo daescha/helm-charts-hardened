@@ -387,6 +387,24 @@ spire-agent:
 			Expect(err).Should(Succeed())
 			Expect(objs["spire/charts/spire-agent/templates/daemonset.yaml"]).Should(ContainSubstring(`secretName: "sigstore-cred"`))
 		})
+		It("renders public keys", func() {
+			objs, err := ValueStringRender(chart, `
+spire-agent:
+  workloadAttestors:
+    k8s:
+      sigstore:
+        enabled: true
+        publicKeys:
+          - |
+            -----BEGIN PUBLIC KEY-----
+            MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE
+            -----END PUBLIC KEY-----
+`)
+			Expect(err).Should(Succeed())
+			cm := objs["spire/charts/spire-agent/templates/configmap.yaml"]
+			Expect(cm).Should(ContainSubstring(`"public_keys"`))
+			Expect(cm).Should(ContainSubstring(`-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE\n-----END PUBLIC KEY-----\n`))
+		})
 		It("rejects an unknown registry auth mode", func() {
 			_, err := ValueStringRender(chart, `
 spire-agent:

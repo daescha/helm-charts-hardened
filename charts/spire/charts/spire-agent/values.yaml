@@ -260,6 +260,8 @@ workloadAttestors:
       enabled: false
       ## @param workloadAttestors.k8s.sigstore.allowedIdentities [object] Maps OIDC provider URIs to lists of allowed subject regexes. Empty accepts any issuer.
       allowedIdentities: {}
+      ## @param workloadAttestors.k8s.sigstore.publicKeys [array] PEM encoded public keys for key-based signatures. Any listed key may verify. Cannot be combined with allowedIdentities.
+      publicKeys: []
       ## @param workloadAttestors.k8s.sigstore.skippedImages [array] Image IDs to skip during signature verification
       skippedImages: []
       ## @param workloadAttestors.k8s.sigstore.rekorURL Rekor transparency log URL. Empty uses the public Rekor instance.

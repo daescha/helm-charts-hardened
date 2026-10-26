@@ -222,6 +222,10 @@ plugins:
           allowed_identities:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .publicKeys }}
+          public_keys:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .skippedImages }}
           skipped_images:
             {{- toYaml . | nindent 12 }}
