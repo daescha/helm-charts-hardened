@@ -217,6 +217,65 @@ jobs:
         run: ./post-install.sh
         working-directory: .github/tests
 
+  openshift-test:
+    runs-on: ubuntu-24.04
+
+    needs:
+      - lint-chart
+
+    env:
+      MICROSHIFT_VERSION: 4.22.0_202610071017_g0a516b4eb_4.22.0_okd_scos.ec.16
+      KUBECONFIG: ${{ github.workspace }}/microshift.kubeconfig
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Checkout MicroShift
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: microshift-io/microshift
+          ref: ${{ env.MICROSHIFT_VERSION }}
+          path: microshift
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Start MicroShift
+        working-directory: microshift
+        run: |
+          sudo podman pull "ghcr.io/microshift-io/microshift:${MICROSHIFT_VERSION}"
+          sudo podman tag "ghcr.io/microshift-io/microshift:${MICROSHIFT_VERSION}" localhost/microshift-okd:latest
+          make run LVM_VOLSIZE=4G
+          make run-ready
+          make run-healthy
+          sudo podman cp "microshift-okd-1:/var/lib/microshift/resources/kubeadmin/microshift-okd-1/kubeconfig" "${KUBECONFIG}"
+          sudo chown "$(id -u):$(id -g)" "${KUBECONFIG}"
+          kubectl config set-cluster microshift-okd-1 --server=https://localhost:6443 --tls-server-name=microshift-okd-1
+
+      - name: Prepare local chart dependencies
+        run: ./.github/scripts/prepare-local-chart-deps.sh
+
+      - name: Install and test the spire chart
+        run: |
+          # Helm creates the CSIDriver last; OpenShift rejects its inline volumes before then in non-privileged namespaces.
+          kubectl create namespace spire-mgmt
+          kubectl label namespace spire-mgmt --overwrite security.openshift.io/scc.podSecurityLabelSync=false \
+            pod-security.kubernetes.io/enforce=privileged
+          helm install spire-crds charts/spire-crds -n spire-mgmt
+          helm install spire charts/spire -n spire-mgmt --set global.openshift=true \
+            --set spiffe-csi-driver.restrictedScc.enabled=true --wait --timeout 10m
+          helm test spire -n spire-mgmt
+          kubectl get pods -n spire-mgmt -o custom-columns=NAME:.metadata.name,SCC:.metadata.annotations.openshift\\.io/scc
+
+      - name: Show cluster state
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide
+          kubectl get events -A --sort-by=.lastTimestamp
+
   build-matrix:
     name: Build matrix
     runs-on: ubuntu-22.04
