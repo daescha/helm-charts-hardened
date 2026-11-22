@@ -354,6 +354,28 @@ grafanaDashboards:
 			Expect(objs["spire/charts/spire-agent/templates/configmap.yaml"]).ShouldNot(ContainSubstring("sigstore"))
 			Expect(objs["spire/charts/spire-agent/templates/daemonset.yaml"]).ShouldNot(ContainSubstring("DOCKER_CONFIG"))
 		})
+		It("renders bundle lookup and the trusted root path", func() {
+			objs, err := ValueStringRender(chart, `
+spire-agent:
+  workloadAttestors:
+    k8s:
+      sigstore:
+        enabled: true
+        registryReferrers: true
+        trustedRootPath: /run/sigstore/trusted_root.json
+`)
+			Expect(err).Should(Succeed())
+			conf := objs["spire/charts/spire-agent/templates/configmap.yaml"]
+			Expect(conf).Should(ContainSubstring(`"registry_referrers": true`))
+			Expect(conf).Should(ContainSubstring(`"trusted_root_path": "/run/sigstore/trusted_root.json"`))
+		})
+		It("omits bundle options when unset", func() {
+			objs, err := ValueStringRender(chart, "spire-agent:\n  workloadAttestors:\n    k8s:\n      sigstore:\n        enabled: true\n")
+			Expect(err).Should(Succeed())
+			conf := objs["spire/charts/spire-agent/templates/configmap.yaml"]
+			Expect(conf).ShouldNot(ContainSubstring("registry_referrers"))
+			Expect(conf).ShouldNot(ContainSubstring("trusted_root_path"))
+		})
 		It("mounts the pod pull secret for registry auth", func() {
 			objs, err := ValueStringRender(chart, `
 spire-agent:

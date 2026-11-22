@@ -232,6 +232,12 @@ plugins:
           ignore_tlog: {{ .ignoreTLog }}
           ignore_attestations: {{ .ignoreAttestations }}
           ignore_sct: {{ .ignoreSCT }}
+          {{- if .registryReferrers }}
+          registry_referrers: true
+          {{- end }}
+          {{- with .trustedRootPath }}
+          trusted_root_path: {{ . | quote }}
+          {{- end }}
         {{- end }}
         {{- end }}
         {{- if or .Values.sockets.broker.enabled .Values.brokerAPI.tcp.enabled }}

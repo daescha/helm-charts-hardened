@@ -270,6 +270,10 @@ workloadAttestors:
       ignoreAttestations: false
       ## @param workloadAttestors.k8s.sigstore.ignoreSCT Skip Signed Certificate Timestamp verification
       ignoreSCT: false
+      ## @param workloadAttestors.k8s.sigstore.registryReferrers Look up sigstore bundles through the OCI 1.1 referrers API
+      registryReferrers: false
+      ## @param workloadAttestors.k8s.sigstore.trustedRootPath Path to a Sigstore trusted_root.json; mount it with extraVolumes
+      trustedRootPath: ""
       registryAuth:
         ## @param workloadAttestors.k8s.sigstore.registryAuth.mode Registry auth for reading signatures: `none`, `podPullSecret` (first agent imagePullSecrets entry) or `pullSecret`
         mode: none
